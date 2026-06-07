@@ -1,0 +1,73 @@
+// prisma/schema.prisma
+// Stack: Prisma 6 · Neon PostgreSQL · Express.js
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Author ───────────────────────────────────────────────────
+model Author {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  password     String   // bcrypt hash
+  bio          String?
+  avatarUrl    String?
+  githubUrl    String?
+  linkedinUrl  String?
+  twitterUrl   String?
+  posts        Post[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("authors")
+}
+
+// ─── Tag ──────────────────────────────────────────────────────
+model Tag {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  posts     PostTag[]
+  createdAt DateTime  @default(now())
+
+  @@map("tags")
+}
+
+// ─── Post ─────────────────────────────────────────────────────
+model Post {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  excerpt     String?
+  content     String
+  coverImage  String?
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  author      Author    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId    String
+  tags        PostTag[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([authorId])
+  @@index([published, publishedAt(sort: Desc)])
+  @@map("posts")
+}
+
+// ─── PostTag (join table) ─────────────────────────────────────
+model PostTag {
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId  String
+
+  @@id([postId, tagId])
+  @@map("post_tags")
+}
